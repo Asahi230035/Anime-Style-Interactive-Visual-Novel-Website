@@ -1,4 +1,4 @@
-# HCL-Final
+#Anime-Style Interactive Visual Novel Website 
 
 一个偏视觉小说风格的 AI 角色对话网页项目。
 
