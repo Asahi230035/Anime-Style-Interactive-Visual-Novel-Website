@@ -25,8 +25,6 @@ index.html
 styles.css
 app.js
 README.md
-代码说明文档.md
-整体说明文档.md
 ```
 
 ## 使用方法
