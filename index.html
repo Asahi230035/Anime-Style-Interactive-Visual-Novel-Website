@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HCL-Final | KiraKira VN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@500;700;900&family=ZCOOL+KuaiLe&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23fff1f7'/%3E%3Cpath d='M10 46c8-22 28-30 45-18-9 2-12 9-15 18-3 8-12 12-20 9-4-1-7-4-10-9Z' fill='%23ff6f9f'/%3E%3Ccircle cx='31' cy='30' r='12' fill='%23ffe2cc'/%3E%3Cpath d='M17 30c5-14 21-17 30-8-8 0-17 2-30 8Z' fill='%23332136'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-emotion="neutral">
+  <div class="app-shell">
+    <!-- 顶部控制区，包含日志、播放控制、角色卡和标题重置等入口。 -->
+    <header class="vn-topbar" aria-label="视觉小说控制栏">
+      <div class="title-badge">
+        <span>KIRAKIRA</span>
+        <strong>AI CHARACTER ROUTE</strong>
+      </div>
+
+      <nav class="vn-controls" aria-label="剧情控制">
+        <button id="logButton" type="button">LOG</button>
+        <button id="autoButton" type="button">AUTO</button>
+        <button id="skipButton" type="button">SKIP</button>
+        <button id="bgmButton" type="button">BGM</button>
+        <button id="muteButton" type="button">MUTE</button>
+        <button id="toggleSettings" type="button">CARD</button>
+        <button id="exportCard" type="button">SAVE</button>
+        <button id="importCardButton" type="button">LOAD</button>
+        <button id="clearChat" type="button">TITLE</button>
+      </nav>
+    </header>
+
+    <!-- 主舞台区域，背景、角色和对话内容都在这里分层展示。 -->
+    <main class="vn-stage" aria-live="polite">
+      <div class="scene-bg" aria-hidden="true">
+        <div class="classroom-wall"></div>
+        <div class="window-row">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="curtain curtain-left"></div>
+        <div class="curtain curtain-right"></div>
+        <div class="desk-row desk-back"></div>
+        <div class="desk-row desk-front"></div>
+        <div class="floor-grid"></div>
+        <div class="light-stripes"></div>
+      </div>
+
+      <div class="petal-field" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <aside class="mini-status" aria-label="角色状态">
+        <div class="route-chip">
+          <span id="apiPill">Mock Streaming</span>
+          <strong id="sceneStatus">Episode 01</strong>
+        </div>
+        <div class="affection-chip">
+          <span>好感度</span>
+          <strong id="affectionText">42%</strong>
+          <i id="affectionBar"></i>
+        </div>
+      </aside>
+
+      <section class="character-layer" aria-label="角色立绘舞台">
+        <div class="emotion-bubble" id="emotionSticker">READY</div>
+        <div class="portrait-stage" id="avatarStage">
+          <div class="portrait-shadow" aria-hidden="true"></div>
+          <img id="avatarImage" alt="角色立绘" hidden>
+          <div class="portrait-placeholder" id="avatarPlaceholder" aria-hidden="true">
+            <div class="vn-girl">
+              <span class="hair-back"></span>
+              <span class="tail tail-left"></span>
+              <span class="tail tail-right"></span>
+              <span class="face">
+                <span class="eye eye-left"></span>
+                <span class="eye eye-right"></span>
+                <span class="blush blush-left"></span>
+                <span class="blush blush-right"></span>
+                <span class="mouth"></span>
+              </span>
+              <span class="bang bang-a"></span>
+              <span class="bang bang-b"></span>
+              <span class="bang bang-c"></span>
+              <span class="neck"></span>
+              <span class="body"></span>
+              <span class="collar collar-left"></span>
+              <span class="collar collar-right"></span>
+              <span class="ribbon"></span>
+              <span class="arm arm-left"></span>
+              <span class="arm arm-right"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dialogue-panel" aria-label="视觉小说对话框">
+        <div class="speaker-plate">
+          <span id="speakerName">青羽凛</span>
+          <small id="emotionLabel">neutral</small>
+        </div>
+
+        <div class="chat-log" id="chatLog"></div>
+
+        <div class="choice-row" aria-label="快捷剧情选择">
+          <button type="button" data-prompt="今天陪我学习一会儿，用你的角色口吻鼓励我。">学习陪伴</button>
+          <button type="button" data-prompt="用傲娇一点的方式吐槽我刚才的想法。">傲娇吐槽</button>
+          <button type="button" data-prompt="我今天有点累，想听你安慰我。">情绪安慰</button>
+        </div>
+
+        <form class="composer" id="chatForm">
+          <textarea id="userInput" rows="2" maxlength="900" placeholder="输入你的台词，按 Ctrl + Enter 发送..." aria-label="输入消息"></textarea>
+          <button class="send-button" id="sendButton" type="submit">发送</button>
+        </form>
+      </section>
+    </main>
+
+    <aside class="settings-panel" id="settingsPanel" aria-label="角色卡与 API 设置" aria-hidden="true">
+      <div class="settings-header">
+        <div>
+          <span class="eyebrow">PERSONA CARD</span>
+          <h1>角色档案</h1>
+        </div>
+        <button class="close-button" id="closeSettings" type="button" aria-label="关闭角色卡">关闭</button>
+      </div>
+
+      <div class="settings-scroll">
+        <section class="setting-group">
+          <label>人格预设模板</label>
+          <div class="preset-grid" aria-label="人格预设模板">
+            <button type="button" data-preset="tsundere">傲娇</button>
+            <button type="button" data-preset="healing">治愈</button>
+            <button type="button" data-preset="meme">热梗</button>
+            <button type="button" data-preset="senpai">学姐</button>
+          </div>
+
+          <label for="characterName">角色名称</label>
+          <input id="characterName" type="text" maxlength="32" placeholder="例如：青羽凛">
+
+          <label for="userNickname">对你的称呼</label>
+          <input id="userNickname" type="text" maxlength="24" placeholder="例如：前桌、制作人、笨蛋同桌">
+
+          <label for="relationship">关系设定</label>
+          <input id="relationship" type="text" maxlength="48" placeholder="例如：同桌兼秘密助手">
+
+          <label for="catchphrase">口癖 / 标志台词</label>
+          <input id="catchphrase" type="text" maxlength="64" placeholder="例如：才、才不是特地在等你。">
+
+          <label for="personalityTags">性格标签</label>
+          <input id="personalityTags" type="text" maxlength="80" placeholder="傲娇、毒舌、温柔、热梗、陪伴感">
+
+          <label for="responseStyle">回复风格</label>
+          <select id="responseStyle">
+            <option value="tsundere">傲娇吐槽型</option>
+            <option value="healing">治愈陪伴型</option>
+            <option value="meme">热梗整活型</option>
+            <option value="senpai">学姐引导型</option>
+          </select>
+
+          <label for="personaPrompt">详细人格设定 Prompt</label>
+          <textarea id="personaPrompt" rows="7" placeholder="写下角色的世界观、说话方式、情绪特征、边界、禁忌和互动偏好。"></textarea>
+
+          <label for="openingLine">开场白</label>
+          <textarea id="openingLine" rows="3" placeholder="第一次进入舞台时角色对你说的话。"></textarea>
+
+          <label for="avatarFile">头像 / 竖版立绘</label>
+          <div class="file-row">
+            <input id="avatarFile" type="file" accept="image/*">
+            <button class="secondary-button" id="removeAvatar" type="button">移除立绘</button>
+          </div>
+        </section>
+
+        <section class="setting-group">
+          <label for="memoryInput">长期记忆卡</label>
+          <textarea id="memoryInput" rows="3" placeholder="例如：用户喜欢傲娇但不喜欢过度说教；用户正在准备课程设计展示。"></textarea>
+          <div class="memory-actions">
+            <button class="secondary-button" id="addMemory" type="button">加入记忆</button>
+            <button class="secondary-button" id="clearMemories" type="button">清空记忆</button>
+          </div>
+          <div class="memory-list" id="memoryList" aria-label="长期记忆列表"></div>
+        </section>
+
+        <section class="setting-group">
+          <label for="apiMode">AI 模式</label>
+          <select id="apiMode">
+            <option value="mock">Mock Streaming</option>
+            <option value="live">Live API</option>
+          </select>
+
+          <label for="baseURL">Base URL</label>
+          <input id="baseURL" type="url" placeholder="https://api.openai.com/v1">
+
+          <label for="model">Model</label>
+          <input id="model" type="text" placeholder="gpt-4o-mini / deepseek-chat">
+
+          <label for="temperature">Temperature</label>
+          <input id="temperature" type="number" min="0" max="2" step="0.1">
+
+          <label for="apiKey">API Key</label>
+          <input id="apiKey" type="password" autocomplete="off" placeholder="仅保存在本地浏览器">
+
+          <label for="replyLanguage">角色回复语言</label>
+          <select id="replyLanguage">
+            <option value="zh-CN">中文</option>
+            <option value="ja-JP">日语</option>
+          </select>
+        </section>
+
+        <section class="setting-group api-debug">
+          <label>API 状态面板</label>
+          <div class="api-debug-grid">
+            <span>模式</span><strong id="apiDebugMode">Mock</strong>
+            <span>模型</span><strong id="apiDebugModel">gpt-4o-mini</strong>
+            <span>状态</span><strong id="apiDebugStatus">Idle</strong>
+            <span>耗时</span><strong id="apiDebugLatency">0 ms</strong>
+            <span>最近错误</span><strong id="apiDebugError">无</strong>
+          </div>
+        </section>
+
+        <section class="setting-group voice-settings">
+          <label>Inworld 角色语音</label>
+          <div class="voice-toggle-row">
+            <label class="check-row" for="voiceEnabled">
+              <input id="voiceEnabled" type="checkbox">
+              <span>启用 Inworld Voice</span>
+            </label>
+            <label class="check-row" for="voiceAutoPlay">
+              <input id="voiceAutoPlay" type="checkbox">
+              <span>AI 回复自动朗读</span>
+            </label>
+          </div>
+
+          <label for="inworldApiKey">Inworld API Key</label>
+          <input id="inworldApiKey" type="password" autocomplete="off" placeholder="仅保存在本地浏览器">
+
+          <label for="inworldVoiceId">Voice ID</label>
+          <input id="inworldVoiceId" type="text" placeholder="例如：Dennis">
+
+          <label for="inworldModelId">Voice Model</label>
+          <input id="inworldModelId" type="text" placeholder="例如：inworld-tts-2">
+
+          <label for="voiceLanguage">语音语言</label>
+          <select id="voiceLanguage">
+            <option value="ja-JP">日语</option>
+            <option value="zh-CN">中文</option>
+            <option value="AUTO">自动识别</option>
+          </select>
+
+          <label for="voiceStylePrompt">语音风格说明（预留）</label>
+          <textarea id="voiceStylePrompt" rows="3" placeholder="保存在角色卡中，后续可接入 Inworld voice steering。"></textarea>
+
+          <label for="voiceVolume">语音音量</label>
+          <div class="volume-row">
+            <input id="voiceVolume" type="range" min="0" max="1" step="0.01">
+            <span id="voiceVolumeText">85%</span>
+          </div>
+
+          <label for="bgmDuckVolume">角色说话时 BGM 音量</label>
+          <div class="volume-row">
+            <input id="bgmDuckVolume" type="range" min="0" max="1" step="0.01">
+            <span id="bgmDuckVolumeText">25%</span>
+          </div>
+
+          <div class="voice-actions">
+            <button class="secondary-button" id="testVoice" type="button">测试语音</button>
+            <button class="secondary-button" id="stopVoice" type="button">停止语音</button>
+          </div>
+
+          <div class="api-debug-grid">
+            <span>语音状态</span><strong id="voiceStatus">Idle</strong>
+            <span>最近错误</span><strong id="voiceError">无</strong>
+          </div>
+        </section>
+
+        <section class="setting-group">
+          <label for="bgmVolume">BGM 音量</label>
+          <div class="volume-row">
+            <input id="bgmVolume" type="range" min="0" max="1" step="0.01">
+            <span id="bgmName">未导入 BGM</span>
+          </div>
+          <button class="secondary-button" id="clearBgm" type="button">移除 BGM</button>
+        </section>
+
+        <section class="setting-group">
+          <label>场景背景图</label>
+          <div class="background-actions">
+            <button class="secondary-button" id="importBackground" type="button">上传背景</button>
+            <button class="secondary-button" id="clearBackground" type="button">恢复默认</button>
+          </div>
+          <label for="backgroundDim">背景暗度</label>
+          <div class="volume-row">
+            <input id="backgroundDim" type="range" min="0" max="0.65" step="0.01">
+            <span id="backgroundName">默认教室场景</span>
+          </div>
+        </section>
+
+        <section class="setting-actions">
+          <button class="secondary-button" id="saveConfig" type="button">保存角色卡</button>
+          <button class="secondary-button" id="resetConfig" type="button">恢复默认</button>
+        </section>
+      </div>
+    </aside>
+
+    <aside class="log-panel" id="logPanel" aria-label="对话记录" aria-hidden="true">
+      <div class="log-header">
+        <span>BACKLOG</span>
+        <button id="closeLog" type="button">关闭</button>
+      </div>
+      <div id="logList" class="log-list"></div>
+    </aside>
+
+    <input id="importCardInput" type="file" accept="application/json,.json" hidden>
+    <input id="bgmInput" type="file" accept="audio/*" hidden>
+    <input id="backgroundInput" type="file" accept="image/*" hidden>
+    <audio id="bgmAudio" loop></audio>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
